@@ -9,9 +9,9 @@ var fs = require('fs');
 const getDailyGameSchedule = function() {
 
   var options = {
-    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/2017-2018-regular/daily_game_schedule.json?fordate=${moment().format('YYYYMMDD')}`,
+    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/current/daily_game_schedule.json?fordate=${moment().format('YYYYMMDD')}`,
     headers: {
-      Authorization: `Basic ${btoa('fake:fake')}`, // don't put stuff like this in github!
+      Authorization: `Basic ${btoa('FAKE:FAKE')}`, // don't put stuff like this in github!
     }
   };
 
