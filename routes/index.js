@@ -13,7 +13,7 @@ const FORMAT = 'json';
 const getDailyGameSchedule = function() {
 
   var options = {
-    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/${NBA_SEASON}/daily_game_schedule.${FORMAT}?fordate=${moment().format('YYYYMMDD')}`,
+    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/${NBA_SEASON}/daily_game_schedule.${FORMAT}?fordate=20180305}`,
     headers: {
       Authorization: `Basic ${AUTH}`, 
     }
@@ -62,6 +62,10 @@ const startFetcher = function(arrGameIds) {
 
   Promise.all(boxScorePromises).then((arrJsonResponses) => {
     console.log(arrJsonResponses.length)
+    fs.writeFile('nba_tableau.json', JSON.stringify(arrJsonResponses), (err) => {
+      if (err) throw err;
+      console.log('The file has been saved!');
+    });
   })
   .catch((err) => {
     console.log(err);
@@ -76,12 +80,12 @@ router.get('/', function(req, res, next) {
     const games = dailyGameJSON.dailygameschedule.gameentry;
     const ids = [];
     for(let i = 0; i < games.length; i++){
-      const gameId = `${moment().format('YYYYMMDD')}-${games[i].awayTeam.Abbreviation}-${games[i].homeTeam.Abbreviation}`;
+      const gameId = `20180305-${games[i].awayTeam.Abbreviation}-${games[i].homeTeam.Abbreviation}`;
       ids.push(gameId);
     }
 
     // CREATE REFRESHER HERE
-    const refreshEverySecs = 5;
+    const refreshEverySecs = 3000;
     setInterval(startFetcher.bind(null, ids), refreshEverySecs * 1000);
   })
   .catch((error) => {
