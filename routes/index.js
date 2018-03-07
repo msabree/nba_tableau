@@ -3,17 +3,23 @@ var router = express.Router();
 var moment = require('moment');
 var request = require('request');
 var btoa = require('btoa');
-var fs = require('fs');
+
+// dropbox integration
+require('es6-promise').polyfill();
+require('isomorphic-fetch');
+var Dropbox = require('dropbox').Dropbox;
+var dbx = new Dropbox({ accessToken: process.env.DROPBOX_ACCESS_TOKEN });
 
 const NBA_SEASON = 'current'; // Change here for other options (e.g. 'current', 'latest', 'upcoming', 2016-playoff', '2016-2017-regular')
-const AUTH = btoa('fake:fake'); // don't put stuff like this in github!
+const AUTH = btoa(`${process.env.MY_SPORTS_FEED_USERNAME}:${process.env.MY_SPORTS_FEED_PASSWORD}`);
 const FORMAT = 'json';
+const NO_GAME_INFO = 'No game data available';
 
 // get the games going on today (be careful with server date and games happening late.. server date may roll over to next day)
 const getDailyGameSchedule = function() {
 
   var options = {
-    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/${NBA_SEASON}/daily_game_schedule.${FORMAT}?fordate=20180305}`,
+    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/${NBA_SEASON}/daily_game_schedule.${FORMAT}?fordate=${moment().format('YYYYMMDD')}`,
     headers: {
       Authorization: `Basic ${AUTH}`, 
     }
@@ -51,7 +57,7 @@ const startFetcher = function(arrGameIds) {
           resolve(JSON.parse(body));
         }
         else if(response.statusCode === 404){
-          resolve({custom_message: 'Game may not have started yet.'})
+          resolve(NO_GAME_INFO)
         }
         else{
           reject({error, code: response.statusCode});
@@ -61,11 +67,16 @@ const startFetcher = function(arrGameIds) {
   }
 
   Promise.all(boxScorePromises).then((arrJsonResponses) => {
-    console.log(arrJsonResponses.length)
-    fs.writeFile('nba_tableau.json', JSON.stringify(arrJsonResponses), (err) => {
-      if (err) throw err;
-      console.log('The file has been saved!');
-    });
+    arrJsonResponses = arrJsonResponses.filter((jsonResp) => {return jsonResp !== NO_GAME_INFO});
+    console.log(arrJsonResponses)
+    dbx.filesUpload({
+      contents: JSON.stringify(arrJsonResponses),
+      path: '/live_stats.json',
+      mode: 'overwrite',
+      autorename: false,
+      mute: true,
+    })
+    .then(console.log, console.error);
   })
   .catch((err) => {
     console.log(err);
@@ -80,13 +91,16 @@ router.get('/', function(req, res, next) {
     const games = dailyGameJSON.dailygameschedule.gameentry;
     const ids = [];
     for(let i = 0; i < games.length; i++){
-      const gameId = `20180305-${games[i].awayTeam.Abbreviation}-${games[i].homeTeam.Abbreviation}`;
+      const gameId = `${moment().format('YYYYMMDD')}-${games[i].awayTeam.Abbreviation}-${games[i].homeTeam.Abbreviation}`;
       ids.push(gameId);
     }
 
     // CREATE REFRESHER HERE
-    const refreshEverySecs = 3000;
+    const refreshEverySecs = 600; // 10 minutes
     setInterval(startFetcher.bind(null, ids), refreshEverySecs * 1000);
+    
+    // call once now, immediately
+    startFetcher(ids);
   })
   .catch((error) => {
     console.log(error);
