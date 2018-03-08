@@ -3,12 +3,7 @@ var router = express.Router();
 var moment = require('moment');
 var request = require('request');
 var btoa = require('btoa');
-
-// dropbox integration
-require('es6-promise').polyfill();
-require('isomorphic-fetch');
-var Dropbox = require('dropbox').Dropbox;
-var dbx = new Dropbox({ accessToken: process.env.DROPBOX_ACCESS_TOKEN });
+var fs = require('fs');
 
 const NBA_SEASON = 'current'; // Change here for other options (e.g. 'current', 'latest', 'upcoming', 2016-playoff', '2016-2017-regular')
 const AUTH = btoa(`${process.env.MY_SPORTS_FEED_USERNAME}:${process.env.MY_SPORTS_FEED_PASSWORD}`);
@@ -69,14 +64,10 @@ const startFetcher = function(arrGameIds) {
   Promise.all(boxScorePromises).then((arrJsonResponses) => {
     arrJsonResponses = arrJsonResponses.filter((jsonResp) => {return jsonResp !== NO_GAME_INFO});
     console.log(arrJsonResponses)
-    dbx.filesUpload({
-      contents: JSON.stringify(arrJsonResponses),
-      path: '/live_stats.json',
-      mode: 'overwrite',
-      autorename: false,
-      mute: true,
+    fs.writeFile('public/nba_tableau.json', JSON.stringify(arrJsonResponses),(err) => {
+      if (err) throw err;
+      console.log('The file has been saved!');
     })
-    .then(console.log, console.error);
   })
   .catch((err) => {
     console.log(err);
