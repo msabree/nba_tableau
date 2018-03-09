@@ -36,6 +36,10 @@ const getDailyGameSchedule = function() {
 const startFetcher = function(arrGameIds) {
   console.log('new pull initiated');
   console.log(arrGameIds);
+  fs.writeFile('./public/game_info.json', JSON.stringify(arrGameIds), (err) => {
+    if (err) throw err;
+    console.log('game info file saved')
+  })
   const boxScorePromises = [];
   for(let i = 0; i < arrGameIds.length; i++){
     // Generate a dynamic url
@@ -64,9 +68,18 @@ const startFetcher = function(arrGameIds) {
   Promise.all(boxScorePromises).then((arrJsonResponses) => {
     arrJsonResponses = arrJsonResponses.filter((jsonResp) => {return jsonResp !== NO_GAME_INFO});
     console.log(arrJsonResponses)
-    fs.writeFile('public/nba_tableau.json', JSON.stringify(arrJsonResponses),(err) => {
+    fs.writeFile('./public/nba_tableau.json', JSON.stringify(arrJsonResponses),(err) => {
       if (err) throw err;
       console.log('The file has been saved!');
+    })
+
+    const info = {
+      date: moment().format('YYYYMMDD'),
+    }
+
+    fs.writeFile('./public/info.json', JSON.stringify(info), (err) => {
+      if (err) throw err;
+      console.log('server info json file saved')
     })
   })
   .catch((err) => {

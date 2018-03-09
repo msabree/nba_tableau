@@ -1,3 +1,5 @@
 node_modules
 .DS_Store
 public/nba_tableau.json
+public/game_info.json
+public/info.json
