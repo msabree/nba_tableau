@@ -9,12 +9,13 @@ const NBA_SEASON = 'current'; // Change here for other options (e.g. 'current', 
 const AUTH = btoa(`${process.env.MY_SPORTS_FEED_USERNAME}:${process.env.MY_SPORTS_FEED_PASSWORD}`);
 const FORMAT = 'json';
 const NO_GAME_INFO = 'No game data available';
+const hardcodeddate = '20180308'; // do the date diff for up to noon next day
 
 // get the games going on today (be careful with server date and games happening late.. server date may roll over to next day)
 const getDailyGameSchedule = function() {
 
   var options = {
-    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/${NBA_SEASON}/daily_game_schedule.${FORMAT}?fordate=${moment().format('YYYYMMDD')}`,
+    url: `https://api.mysportsfeeds.com/v1.2/pull/nba/${NBA_SEASON}/daily_game_schedule.${FORMAT}?fordate=${hardcodeddate}`,
     headers: {
       Authorization: `Basic ${AUTH}`, 
     }
@@ -95,7 +96,7 @@ router.get('/', function(req, res, next) {
     const games = dailyGameJSON.dailygameschedule.gameentry;
     const ids = [];
     for(let i = 0; i < games.length; i++){
-      const gameId = `${moment().format('YYYYMMDD')}-${games[i].awayTeam.Abbreviation}-${games[i].homeTeam.Abbreviation}`;
+      const gameId = `${hardcodeddate}-${games[i].awayTeam.Abbreviation}-${games[i].homeTeam.Abbreviation}`;
       ids.push(gameId);
     }
 
